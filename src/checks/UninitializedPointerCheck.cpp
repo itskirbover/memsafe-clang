@@ -161,7 +161,7 @@ private:
       }
     }
 
-    // Dereference: *p
+    // Dereference (*p) or address-of (&p, e.g. out-parameter initialization)
     if (const auto *uo = llvm::dyn_cast<clang::UnaryOperator>(stmt)) {
       if (uo->getOpcode() == clang::UO_Deref) {
         if (const clang::VarDecl *vd = extractVarDecl(uo->getSubExpr())) {
@@ -169,6 +169,12 @@ private:
             reportOnce(uo->getBeginLoc(), vd, "CWE-824",
                        "dereference of uninitialized pointer '" +
                            vd->getNameAsString() + "'");
+          }
+        }
+      } else if (uo->getOpcode() == clang::UO_AddrOf) {
+        if (const clang::VarDecl *vd = extractVarDecl(uo->getSubExpr())) {
+          if (vd->getType()->isPointerType()) {
+            uninit.erase(vd);
           }
         }
       }
@@ -231,7 +237,21 @@ private:
         }
         return;
       }
-      for (const clang::Expr *arg : call->arguments()) {
+      for (unsigned i = 0; i < call->getNumArgs(); ++i) {
+        const clang::Expr *arg = call->getArg(i);
+        // C++ non-const lvalue reference out-parameter: void init(int *&p)
+        if (callee && i < callee->getNumParams()) {
+          clang::QualType paramTy = callee->getParamDecl(i)->getType();
+          if (paramTy->isLValueReferenceType() &&
+              !paramTy.getNonReferenceType().isConstQualified()) {
+            if (const clang::VarDecl *vd = extractVarDecl(arg)) {
+              if (vd->getType()->isPointerType()) {
+                uninit.erase(vd);
+                continue;
+              }
+            }
+          }
+        }
         transferStmt(arg, uninit, emitDiags);
       }
       return;
