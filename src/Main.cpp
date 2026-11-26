@@ -1,6 +1,7 @@
 #include "memsafe/Check.h"
 
 #include <clang/Frontend/FrontendActions.h>
+#include <clang/Tooling/ArgumentsAdjusters.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
 #include <llvm/Support/CommandLine.h>
@@ -57,6 +58,12 @@ int main(int argc, const char **argv) {
   clang::tooling::CommonOptionsParser &optionsParser = expectedParser.get();
   clang::tooling::ClangTool tool(optionsParser.getCompilations(),
                                  optionsParser.getSourcePathList());
+
+#ifdef MEMSAFE_CLANG_RESOURCE_DIR
+  tool.appendArgumentsAdjuster(clang::tooling::getInsertArgumentAdjuster(
+      {"-resource-dir", MEMSAFE_CLANG_RESOURCE_DIR},
+      clang::tooling::ArgumentInsertPosition::END));
+#endif
 
   memsafe::CheckOptions options;
   std::vector<memsafe::Finding> findings;
