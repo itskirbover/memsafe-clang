@@ -42,6 +42,7 @@ std::vector<std::unique_ptr<MemorySafetyCheck>> createAllChecks() {
   std::vector<std::unique_ptr<MemorySafetyCheck>> checks;
   checks.push_back(createBufferOverflowCheck());
   checks.push_back(createUseAfterFreeCheck());
+  checks.push_back(createUninitializedPointerCheck());
   return checks;
 }
 
