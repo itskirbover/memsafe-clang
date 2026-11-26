@@ -7,5 +7,6 @@
 namespace memsafe {
 
 std::unique_ptr<MemorySafetyCheck> createBufferOverflowCheck();
+std::unique_ptr<MemorySafetyCheck> createUseAfterFreeCheck();
 
 } // namespace memsafe

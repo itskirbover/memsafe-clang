@@ -41,6 +41,7 @@ void DiagnosticReporter::report(clang::SourceLocation loc,
 std::vector<std::unique_ptr<MemorySafetyCheck>> createAllChecks() {
   std::vector<std::unique_ptr<MemorySafetyCheck>> checks;
   checks.push_back(createBufferOverflowCheck());
+  checks.push_back(createUseAfterFreeCheck());
   return checks;
 }
 
