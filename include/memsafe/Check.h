@@ -64,6 +64,9 @@ public:
 
 std::vector<std::unique_ptr<MemorySafetyCheck>> createAllChecks();
 
+void parseChecksList(const std::string &csv, std::set<std::string> &out);
+std::string formatFindingsAsJson(std::vector<Finding> findings);
+
 class MemSafeASTConsumer : public clang::ASTConsumer {
 public:
   MemSafeASTConsumer(const CheckOptions &options,

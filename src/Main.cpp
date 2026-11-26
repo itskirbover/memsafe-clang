@@ -8,11 +8,30 @@
 #include <llvm/Support/raw_ostream.h>
 
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace {
 
 llvm::cl::OptionCategory MemSafeCategory("memsafe-check options");
+
+llvm::cl::opt<std::string> ChecksOpt(
+    "checks",
+    llvm::cl::desc(
+        "Comma-separated list of checks to run "
+        "(buffer-overflow,use-after-free,uninitialized-pointer, or 'all')"),
+    llvm::cl::init("all"), llvm::cl::cat(MemSafeCategory));
+
+llvm::cl::opt<bool> FailOnWarningOpt(
+    "fail-on-warning",
+    llvm::cl::desc(
+        "Treat memory-safety findings as errors and exit with non-zero status"),
+    llvm::cl::init(false), llvm::cl::cat(MemSafeCategory));
+
+llvm::cl::opt<std::string> FormatOpt(
+    "format",
+    llvm::cl::desc("Output format: 'text' (Clang diagnostics) or 'json'"),
+    llvm::cl::init("text"), llvm::cl::cat(MemSafeCategory));
 
 class MemSafeFrontendAction : public clang::ASTFrontendAction {
 public:
@@ -55,6 +74,17 @@ int main(int argc, const char **argv) {
     return 1;
   }
 
+  if (FormatOpt != "text" && FormatOpt != "json") {
+    llvm::errs() << "error: unsupported --format '" << FormatOpt
+                 << "' (expected 'text' or 'json')\n";
+    return 1;
+  }
+
+  memsafe::CheckOptions options;
+  memsafe::parseChecksList(ChecksOpt, options.enabledChecks);
+  options.failOnWarning = FailOnWarningOpt;
+  options.jsonOutput = (FormatOpt == "json");
+
   clang::tooling::CommonOptionsParser &optionsParser = expectedParser.get();
   clang::tooling::ClangTool tool(optionsParser.getCompilations(),
                                  optionsParser.getSourcePathList());
@@ -65,11 +95,15 @@ int main(int argc, const char **argv) {
       clang::tooling::ArgumentInsertPosition::END));
 #endif
 
-  memsafe::CheckOptions options;
   std::vector<memsafe::Finding> findings;
   MemSafeActionFactory factory(options, findings);
 
   int rc = tool.run(&factory);
+
+  if (options.jsonOutput) {
+    llvm::outs() << memsafe::formatFindingsAsJson(findings);
+  }
+
   if (rc != 0) {
     return rc;
   }
