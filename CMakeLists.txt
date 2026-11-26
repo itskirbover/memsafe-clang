@@ -43,7 +43,7 @@ endif()
 
 # Detect Clang resource directory so standalone memsafe-check finds stddef.h/stdarg.h
 execute_process(
-  COMMAND clang -print-resource-dir
+  COMMAND ${CMAKE_CXX_COMPILER} -print-resource-dir
   OUTPUT_VARIABLE MEMSAFE_CLANG_RESOURCE_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   ERROR_QUIET
@@ -80,3 +80,19 @@ target_compile_options(memsafe-check PRIVATE -Wall -Wextra -fno-rtti)
 target_link_libraries(memsafe-check PRIVATE memsafe_core)
 
 enable_testing()
+
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_FOUND)
+  set(MEMSAFE_TEST_CASES buffer-overflow use-after-free uninit-pointer filtering plugin)
+  foreach(CASE ${MEMSAFE_TEST_CASES})
+    add_test(
+      NAME memsafe_${CASE}
+      COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/run_tests.py
+        --cli $<TARGET_FILE:memsafe-check>
+        --plugin $<TARGET_FILE:MemSafePlugin>
+        --clang ${CMAKE_CXX_COMPILER}
+        --fixtures ${CMAKE_CURRENT_SOURCE_DIR}/tests/fixtures
+        --case ${CASE}
+    )
+  endforeach()
+endif()
