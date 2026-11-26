@@ -41,9 +41,22 @@ else()
   llvm_map_components_to_libnames(MEMSAFE_LLVM_LIBS support core option)
 endif()
 
+# Detect Clang resource directory so standalone memsafe-check finds stddef.h/stdarg.h
+execute_process(
+  COMMAND clang -print-resource-dir
+  OUTPUT_VARIABLE MEMSAFE_CLANG_RESOURCE_DIR
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  ERROR_QUIET
+)
+if(MEMSAFE_CLANG_RESOURCE_DIR)
+  message(STATUS "Clang resource dir: ${MEMSAFE_CLANG_RESOURCE_DIR}")
+  add_compile_definitions(MEMSAFE_CLANG_RESOURCE_DIR="${MEMSAFE_CLANG_RESOURCE_DIR}")
+endif()
+
 # Core analysis library
 add_library(memsafe_core STATIC
   src/Core.cpp
+  src/checks/BufferOverflowCheck.cpp
 )
 target_include_directories(memsafe_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(memsafe_core PRIVATE -Wall -Wextra -fno-rtti)

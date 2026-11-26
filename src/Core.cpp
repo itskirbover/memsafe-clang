@@ -1,4 +1,5 @@
 #include "memsafe/Check.h"
+#include "memsafe/Checks.h"
 
 #include <clang/Basic/SourceManager.h>
 
@@ -39,7 +40,7 @@ void DiagnosticReporter::report(clang::SourceLocation loc,
 
 std::vector<std::unique_ptr<MemorySafetyCheck>> createAllChecks() {
   std::vector<std::unique_ptr<MemorySafetyCheck>> checks;
-  // Individual checks are registered here as they are implemented.
+  checks.push_back(createBufferOverflowCheck());
   return checks;
 }
 
