@@ -57,6 +57,7 @@ endif()
 add_library(memsafe_core STATIC
   src/Core.cpp
   src/checks/BufferOverflowCheck.cpp
+  src/checks/UseAfterFreeCheck.cpp
 )
 target_include_directories(memsafe_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(memsafe_core PRIVATE -Wall -Wextra -fno-rtti)
